@@ -1,13 +1,30 @@
 import os
 import json
 import random
+import threading
+from flask import Flask
 import disnake as discord
 
 TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 
-intents = disnake.Intents.default()
+# FlaskでダミーのWebサーバーを作る（Render用）
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Bot is alive!"
+
+def run_web():
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
+# Flaskサーバーを別スレッドで動かす
+threading.Thread(target=run_web).start()
+
+# ここからBotの処理
+intents = discord.Intents.default()
 intents.message_content = True
-client = disnake.Client(intents=intents)
+client = discord.Client(intents=intents)
 
 DATA_FILE = "tidebot_data.json"
 
@@ -18,7 +35,6 @@ if os.path.exists(DATA_FILE):
 else:
     data = {}
 
-# 拾えるアイテム
 items = [
     "貝殻", "シーグラス", "星の砂", "小瓶", "流木",
     "君がいつか失くしたもの", "君がいつか忘れてしまった記憶",
@@ -30,7 +46,6 @@ items = [
     "溶けかけのキャンドル", "錆びたブローチ", "誰かのコート",
 ]
 
-# お題と対応色
 prompt_colors = {
     "夕暮れ": 0xF3BF88, "朝焼け": 0xF9C5B7, "雨上がり": 0xA1C7D4,
     "傘": 0xC1B4D6, "制服": 0x7A90A4, "光": 0xFFF1A6,
@@ -47,11 +62,11 @@ def save_data():
 
 @client.event
 async def on_ready():
-    print(f"✅ Logged in as {client.user} (ID: {client.user.id})")
+    print("Bot is ready!")
 
 @client.event
 async def on_message(message):
-    if message.author.bot:
+    if message.author == client.user:
         return
 
     user_id = str(message.author.id)
@@ -68,33 +83,19 @@ async def on_message(message):
         else:
             unique_items = sorted(set(data[user_id]))
             collected = "、".join(unique_items)
-
-            embed = disnake.Embed(
-                title="･ﾟ✦List",
-                description=collected,
-                color=0x84A2D4
-            )
+            embed = discord.Embed(title="･ﾟ✦List", description=collected, color=0x84A2D4)
             embed.set_footer(text="海辺で拾った思い出。")
-            embed.set_author(
-                name=message.author.display_name,
-                icon_url=message.author.display_avatar.url
-            )
+            embed.set_author(name=message.author.display_name, icon_url=message.author.display_avatar.url)
             await message.channel.send(embed=embed)
 
     elif message.content.startswith("お題"):
         parts = message.content.replace("お題", "").strip()
         num = int(parts) if parts.isdigit() else 1
         num = max(1, min(10, num))
-
         selected = random.sample(list(prompt_colors.keys()), num)
         color = prompt_colors[selected[0]] if num == 1 else random.choice(list(prompt_colors.values()))
         joined = "、".join(selected)
-
-        embed = disnake.Embed(
-            title="‎‎.𖥔 ݁Theme",
-            description=joined,
-            color=color
-        )
+        embed = discord.Embed(title=".𖥔 ݁Theme", description=joined, color=color)
         embed.set_footer(text="潮風のなかで夢を見た。")
         await message.channel.send(embed=embed)
 
