@@ -1,4 +1,4 @@
-import nextcord as discord
+import nextcord
 import random
 import json
 import os
@@ -6,9 +6,9 @@ import os
 # ⚠️ トークンは環境変数から読み込む
 TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 
-intents = discord.Intents.default()
+intents = nextcord.Intents.default()
 intents.message_content = True
-client = discord.Client(intents=intents)
+client = nextcord.Client(intents=intents)
 
 DATA_FILE = "tidebot_data.json"
 
