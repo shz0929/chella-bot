@@ -1,4 +1,4 @@
-import discord
+import nextcord as discord
 import random
 import json
 import os
