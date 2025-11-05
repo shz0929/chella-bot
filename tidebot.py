@@ -1,7 +1,7 @@
 import os
 import json
 import random
-import disnake
+import disnake as discord
 
 TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 
