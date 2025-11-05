@@ -1,10 +1,13 @@
-import nextcord
-import random
-import json
 import os
+import nextcord
 
 # ⚠️ トークンは環境変数から読み込む
 TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
+
+# audioop問題を避けるためにVoice関係を無効化する
+nextcord.opus = None
+nextcord.voice_client = None
+nextcord.player = None
 
 intents = nextcord.Intents.default()
 intents.message_content = True
