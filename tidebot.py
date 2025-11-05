@@ -1,12 +1,13 @@
 import os
-import disnake as discord
+import json
+import random
+import disnake
 
 TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 
-intents = discord.Intents.default()
+intents = disnake.Intents.default()
 intents.message_content = True
-client = discord.Client(intents=intents)
-
+client = disnake.Client(intents=intents)
 
 DATA_FILE = "tidebot_data.json"
 
@@ -40,31 +41,27 @@ prompt_colors = {
     "約束": 0xFFD580, "異国": 0xD9C4A1
 }
 
-# データ保存用関数
 def save_data():
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 @client.event
 async def on_ready():
-    print("Bot is ready!")
+    print(f"✅ Logged in as {client.user} (ID: {client.user.id})")
 
 @client.event
 async def on_message(message):
-    if message.author == client.user:
+    if message.author.bot:
         return
 
     user_id = str(message.author.id)
 
-    # 「拾う」コマンド
     if message.content == "拾う":
         found = random.choice(items)
         await message.channel.send(f"{found}を拾った")
-
         data.setdefault(user_id, []).append(found)
         save_data()
 
-    # 「図鑑」コマンド
     elif message.content == "図鑑":
         if not data.get(user_id):
             await message.channel.send("まだ何も拾っていません。")
@@ -72,7 +69,7 @@ async def on_message(message):
             unique_items = sorted(set(data[user_id]))
             collected = "、".join(unique_items)
 
-            embed = discord.Embed(
+            embed = disnake.Embed(
                 title="･ﾟ✦List",
                 description=collected,
                 color=0x84A2D4
@@ -84,17 +81,16 @@ async def on_message(message):
             )
             await message.channel.send(embed=embed)
 
-    # 「お題」コマンド（数字指定対応）
     elif message.content.startswith("お題"):
         parts = message.content.replace("お題", "").strip()
         num = int(parts) if parts.isdigit() else 1
-        num = max(1, min(10, num))  # 最大10個
+        num = max(1, min(10, num))
 
         selected = random.sample(list(prompt_colors.keys()), num)
         color = prompt_colors[selected[0]] if num == 1 else random.choice(list(prompt_colors.values()))
         joined = "、".join(selected)
 
-        embed = discord.Embed(
+        embed = disnake.Embed(
             title="‎‎.𖥔 ݁Theme",
             description=joined,
             color=color
